@@ -1,0 +1,18 @@
+The numbers of parameters used for this resulution is:                                                                17
+toe: reference time ephemeris                                                                         5.193000000000e+05
+sqra: square root of semi-major axis                                                                  2.620610307908e+03
+dty: eccentricity                                                                                     2.469504917752e-03
+inc0: inclination angle at reference time                                                             1.553130881582e+00
+Omega0: longitude of ascending node of orbit plane at weekly epoch                                    2.122016226355e+00
+w: argument of perigee                                                                                2.056434906662e+00
+ma: mean anomaly at reference time                                                                   -2.923875362642e+00
+dn: mean motion correction term                                                                      -4.023271578731e-07
+idot: rate of inclination angle                                                                       2.016289815997e-08
+Omegadot: rate of right ascension                                                                    -2.215793055772e-08
+crc: amplitude of the cosine harmonic correction term to the orbit radius                             1.594766452378e+03
+crs: amplitude of the sine harmonic correction term to the orbit radius                              -2.138953939069e+01
+cuc: amplitude of the cosine harmonic correction term to the argument of latitude                    -7.753117581447e-07
+cus: amplitude of the sine harmonic correction term to the argument of latitude                       1.188989839786e-04
+cic: amplitude of the cosine harmonic correction term to the angle of inclination                    -7.561041027638e-06
+cis: amplitude of the sine harmonic correction term to the angle of inclination                      -1.043468446056e-06
+Adot: newly introduced parameter                                                                      8.836335355275e-02

@@ -1,23 +1,27 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
+# from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
+
 
 '''
 import my own Module
 '''
 from brdModel import calSatPos_16para
-from brdModel import calSatPos_17para_case1,calSatPos_17para_case2,calSatPos_17para_case3
-from brdModel import calSatPos_18para_case1,calSatPos_18para_case2,calSatPos_18para_case3
-from brdModel import calSatPos_19para_case1,calSatPos_19para_case2,calSatPos_19para_case3
-from brdModel import calSatPos_20para_case1,calSatPos_20para_case2,calSatPos_20para_case3
-from brdModel import calSatPos_21para_case1,calSatPos_21para_case2,calSatPos_21para_case3
-from brdModel import calSatPos_22para_case1,calSatPos_22para_case2,calSatPos_22para_case3
-
+from brdModel import calSatPos_17para_case1, calSatPos_17para_case2, calSatPos_17para_case3
+from brdModel import calSatPos_18para_case1, calSatPos_18para_case2, calSatPos_18para_case3
+from brdModel import calSatPos_19para_case1, calSatPos_19para_case2, calSatPos_19para_case3
+from brdModel import calSatPos_20para_case1, calSatPos_20para_case2, calSatPos_20para_case3
+from brdModel import calSatPos_21para_case1, calSatPos_21para_case2, calSatPos_21para_case3
+from brdModel import calSatPos_22para_case1, calSatPos_22para_case2, calSatPos_22para_case3
 
 '''
 This function: calculate the partial derivatives of satellite position vectors
 with respect to broadcast ephemeris parameters at a single epoch
 '''
+
+
 def formMatrixSingleEpoch(x_ecef, x_brd, tk, toe, npara, para_case):
     # in: (1)x,y,z from sp3
     # (2) tk, toe
@@ -121,34 +125,84 @@ def formMatrixSingleEpoch(x_ecef, x_brd, tk, toe, npara, para_case):
     B_mat = x_ecef[0:3] - x_cal_pos
 
     return np.array(A_mat, dtype=np.float64), np.array(B_mat, dtype=np.float64)
-    
 
 
 '''
 This function: accumulate the partial derivatives of satellite position vectors
 with respect to broadcast ephemeris parameters at many epochs
 '''
+
+
 def formMatrixManyEpochs(x_ecef_arr, x_brd, tk_arr, toe, npara, para_case):
-    #pass
-    
+    # pass
+
     # obtain the row and column size length
     rows = tk_arr.shape[0]
 
-    final_A_mat = np.zeros((3*rows, npara-1))
-    final_B_mat = np.zeros(3*rows)
-    
-    
+    final_A_mat = np.zeros((3 * rows, npara - 1))
+    final_B_mat = np.zeros(3 * rows)
+
     for index in range(rows):
-        single_A_mat, single_B_mat = formMatrixSingleEpoch(x_ecef_arr[index,0:3], x_brd, tk_arr[index], toe, npara, para_case)
-        final_A_mat[3*index:3*index+3,:] = single_A_mat
-        final_B_mat[3*index:3*index+3] = single_B_mat
-        
-    #return final_A_mat, final_B_mat
+        single_A_mat, single_B_mat = formMatrixSingleEpoch(x_ecef_arr[index, 0:3], x_brd, tk_arr[index], toe, npara,
+                                                           para_case)
+        final_A_mat[3 * index:3 * index + 3, :] = single_A_mat
+        final_B_mat[3 * index:3 * index + 3] = single_B_mat
+
+    # return final_A_mat, final_B_mat
     return final_A_mat, final_B_mat
 
 
+# def formMatrixManyEpochs_parallel(x_ecef_arr, x_brd, tk_arr, toe, npara, para_case):
+#
+#     # obtain the row and column size length
+#     rows = tk_arr.shape[0]
+#
+#     final_A_mat = np.zeros((3 * rows, npara - 1))
+#     final_B_mat = np.zeros(3 * rows)
+#
+#     # use ThreadPoolExecutor to do parallel computation
+#     with ThreadPoolExecutor(max_workers=10) as executor:
+#         futures = []
+#
+#         for index in range(rows):
+#             futures.append(
+#                 executor.submit(formMatrixSingleEpoch,
+#                                 x_ecef_arr[index, 0:3],
+#                                 x_brd, tk_arr[index],
+#                                 toe, npara,
+#                                 para_case))
+#
+#         # collect results
+#         for i, future in enumerate(futures):
+#             single_A_mat, single_B_mat = future.result()
+#             final_A_mat[i * 3:(i + 1) * 3, :] = single_A_mat
+#             final_B_mat[i * 3:(i + 1) * 3] = single_B_mat
+#
+#     return final_A_mat, final_B_mat
 
 
-    
-    
-    
+def formMatrixManyEpochs_parallel(x_ecef_arr, x_brd, tk_arr, toe, npara, para_case):
+    # obtain the row and column size length
+    rows = tk_arr.shape[0]
+
+    final_A_mat = np.zeros((3 * rows, npara - 1))
+    final_B_mat = np.zeros(3 * rows)
+
+    # use ProcessPoolExecutor to do parallel computation
+    with ProcessPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(formMatrixSingleEpoch,
+                            x_ecef_arr[index, 0:3],
+                            x_brd, tk_arr[index],
+                            toe, npara,
+                            para_case): index for index in range(rows)
+        }
+
+        # collect results
+        for future in futures:
+            i = futures[future]
+            single_A_mat, single_B_mat = future.result()
+            final_A_mat[i * 3:(i + 1) * 3, :] = single_A_mat
+            final_B_mat[i * 3:(i + 1) * 3] = single_B_mat
+
+    return final_A_mat, final_B_mat
